@@ -1,8 +1,9 @@
 "use client";
 
+import React, { useState, useEffect } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { PlusCircle, XCircle, Save, LogOut, User } from "lucide-react";
 
 export default function AdminPage() {
   const { user, logout } = useAuth();
@@ -21,6 +22,18 @@ export default function AdminPage() {
     area: "",
   });
 
+  useEffect(() => {
+    const storedData = localStorage.getItem("eventData");
+    if (storedData) {
+      const parsedData = JSON.parse(storedData);
+      setEventCapacity(parsedData.capacity || "");
+      setAreas(parsedData.areas || []);
+      setEntrances(parsedData.entrances || []);
+      setControlPoints(parsedData.controlPoints || []);
+      setRoutes(parsedData.routes || []);
+    }
+  }, []);
+
   if (!user || user.role !== "admin") {
     router.push("/login");
     return null;
@@ -28,7 +41,11 @@ export default function AdminPage() {
 
   const addItem = (type, setter) => {
     const newItem = { id: Date.now(), name: "" };
-    setter((prev) => [...prev, newItem]);
+    setter((prev) => {
+      const updated = [...prev, newItem];
+      saveToLocalStorage({ [type + "s"]: updated });
+      return updated;
+    });
   };
 
   const removeItem = (type, id) => {
@@ -38,7 +55,11 @@ export default function AdminPage() {
         : type === "entrance"
         ? setEntrances
         : setControlPoints;
-    setter((prev) => prev.filter((item) => item.id !== id));
+    setter((prev) => {
+      const updated = prev.filter((item) => item.id !== id);
+      saveToLocalStorage({ [type + "s"]: updated });
+      return updated;
+    });
   };
 
   const updateItem = (type, id, name) => {
@@ -48,9 +69,13 @@ export default function AdminPage() {
         : type === "entrance"
         ? setEntrances
         : setControlPoints;
-    setter((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, name } : item))
-    );
+    setter((prev) => {
+      const updated = prev.map((item) =>
+        item.id === id ? { ...item, name } : item
+      );
+      saveToLocalStorage({ [type + "s"]: updated });
+      return updated;
+    });
   };
 
   const addRoute = () => {
@@ -59,13 +84,27 @@ export default function AdminPage() {
       currentRoute.controlPoint &&
       currentRoute.area
     ) {
-      setRoutes((prev) => [...prev, { ...currentRoute, id: Date.now() }]);
+      setRoutes((prev) => {
+        const updated = [...prev, { ...currentRoute, id: Date.now() }];
+        saveToLocalStorage({ routes: updated });
+        return updated;
+      });
       setCurrentRoute({ entrance: "", controlPoint: "", area: "" });
     }
   };
 
   const removeRoute = (id) => {
-    setRoutes((prev) => prev.filter((route) => route.id !== id));
+    setRoutes((prev) => {
+      const updated = prev.filter((route) => route.id !== id);
+      saveToLocalStorage({ routes: updated });
+      return updated;
+    });
+  };
+
+  const saveToLocalStorage = (data) => {
+    const currentData = JSON.parse(localStorage.getItem("eventData") || "{}");
+    const updatedData = { ...currentData, ...data };
+    localStorage.setItem("eventData", JSON.stringify(updatedData));
   };
 
   const handleSubmit = (e) => {
@@ -80,80 +119,98 @@ export default function AdminPage() {
       routes,
     };
 
-    const jsonData = JSON.stringify(eventData, null, 2);
-    const blob = new Blob([jsonData], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = "event-data.json";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-
-    setMessage("Event data saved and downloaded successfully!");
+    saveToLocalStorage(eventData);
+    setMessage("Event data saved successfully!");
   };
 
   const renderItemList = (type, items, setter) => (
-    <div className="space-y-2">
-      <h2 className="text-lg font-semibold capitalize">{type}s</h2>
-      {items.map((item) => (
-        <div key={item.id} className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={item.name}
-            onChange={(e) => updateItem(type, item.id, e.target.value)}
-            placeholder={`${type.charAt(0).toUpperCase() + type.slice(1)} name`}
-            className="flex-grow px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <span className="text-sm text-gray-500">ID: {item.id}</span>
-          <button
-            type="button"
-            onClick={() => removeItem(type, item.id)}
-            className="p-1 text-red-500 hover:text-red-700"
-          >
-            ✕
-          </button>
-        </div>
-      ))}
-      <button
-        type="button"
-        onClick={() => addItem(type, setter)}
-        className="flex items-center px-3 py-2 text-sm text-blue-600 hover:text-blue-800"
-      >
-        + Add {type}
-      </button>
+    <div className="space-y-4">
+      <h2 className="text-xl font-semibold capitalize text-gray-200 flex items-center">
+        <span className="mr-2">{type}s</span>
+        <button
+          type="button"
+          onClick={() => addItem(type, setter)}
+          className="text-gray-400 hover:text-white transition-colors"
+          title={`Add ${type}`}
+        >
+          <PlusCircle size={20} />
+        </button>
+      </h2>
+      <div className="space-y-2">
+        {items.map((item) => (
+          <div key={item.id} className="flex items-center space-x-2">
+            <input
+              type="text"
+              value={item.name}
+              onChange={(e) => updateItem(type, item.id, e.target.value)}
+              placeholder={`${
+                type.charAt(0).toUpperCase() + type.slice(1)
+              } name`}
+              className="flex-grow px-3 py-2 bg-gray-800 border border-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-600 text-gray-200 placeholder-gray-500"
+            />
+            <button
+              type="button"
+              onClick={() => removeItem(type, item.id)}
+              className="text-red-400 hover:text-red-300 transition-colors"
+              title={`Remove ${type}`}
+            >
+              <XCircle size={20} />
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-100 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="bg-white shadow-xl rounded-lg overflow-hidden">
-          <div className="px-6 py-4 bg-blue-600 text-white">
-            <h1 className="text-2xl font-bold">Welcome, Admin {user.name}</h1>
+    <div className="min-h-screen bg-gray-900 py-6 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto">
+        <div className="bg-gray-800 shadow-2xl rounded-lg overflow-hidden border border-gray-700">
+          <div className="px-6 py-4 bg-gray-800 text-white flex justify-between items-center">
+            <div className="flex items-center space-x-4">
+              <div className="p-2 bg-gray-700 rounded-full">
+                <User size={24} />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold">{user.name}</h1>
+                <p className="text-sm text-gray-400 capitalize">{user.role}</p>
+              </div>
+            </div>
+            <button
+              onClick={logout}
+              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors flex items-center"
+            >
+              <LogOut size={18} className="mr-2" />
+              Logout
+            </button>
           </div>
-          <form onSubmit={handleSubmit} className="p-6 space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Event Capacity
-              </label>
-              <input
-                type="number"
-                value={eventCapacity}
-                onChange={(e) => setEventCapacity(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
+          <form onSubmit={handleSubmit} className="p-6 space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-1">
+                  Event Capacity
+                </label>
+                <input
+                  type="number"
+                  value={eventCapacity}
+                  onChange={(e) => setEventCapacity(e.target.value)}
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-200"
+                  required
+                />
+              </div>
             </div>
 
-            {renderItemList("area", areas, setAreas)}
-            {renderItemList("entrance", entrances, setEntrances)}
-            {renderItemList("controlPoint", controlPoints, setControlPoints)}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {renderItemList("area", areas, setAreas)}
+              {renderItemList("entrance", entrances, setEntrances)}
+              {renderItemList("controlPoint", controlPoints, setControlPoints)}
+            </div>
 
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold">Create Routes</h2>
-              <div className="flex space-x-2">
+            <div className="space-y-4">
+              <h2 className="text-xl font-semibold text-gray-200">
+                Create Routes
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <select
                   value={currentRoute.entrance}
                   onChange={(e) =>
@@ -162,7 +219,7 @@ export default function AdminPage() {
                       entrance: e.target.value,
                     })
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-200"
                 >
                   <option value="">Select Entrance</option>
                   {entrances.map((entrance) => (
@@ -179,7 +236,7 @@ export default function AdminPage() {
                       controlPoint: e.target.value,
                     })
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-200"
                 >
                   <option value="">Select Control Point</option>
                   {controlPoints.map((cp) => (
@@ -193,7 +250,7 @@ export default function AdminPage() {
                   onChange={(e) =>
                     setCurrentRoute({ ...currentRoute, area: e.target.value })
                   }
-                  className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-gray-500 text-gray-200"
                 >
                   <option value="">Select Area</option>
                   {areas.map((area) => (
@@ -202,23 +259,26 @@ export default function AdminPage() {
                     </option>
                   ))}
                 </select>
-                <button
-                  type="button"
-                  onClick={addRoute}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  Add Route
-                </button>
               </div>
-              <div className="mt-2">
-                <h3 className="text-md font-semibold">Created Routes:</h3>
-                <ul className="list-disc list-inside">
+              <button
+                type="button"
+                onClick={addRoute}
+                className="w-full px-4 py-2 bg-gray-700 text-white rounded-md hover:bg-gray-600 transition-colors flex items-center justify-center"
+              >
+                <PlusCircle size={18} className="mr-2" />
+                Add Route
+              </button>
+              <div className="mt-4">
+                <h3 className="text-lg font-semibold text-gray-300 mb-2">
+                  Created Routes:
+                </h3>
+                <ul className="space-y-2">
                   {routes.map((route) => (
                     <li
                       key={route.id}
-                      className="flex items-center justify-between"
+                      className="flex items-center justify-between bg-gray-700 p-2 rounded-md"
                     >
-                      <span>
+                      <span className="text-gray-300">
                         {entrances.find((e) => e.id == route.entrance)?.name} →{" "}
                         {
                           controlPoints.find(
@@ -230,9 +290,9 @@ export default function AdminPage() {
                       <button
                         type="button"
                         onClick={() => removeRoute(route.id)}
-                        className="text-red-500 hover:text-red-700"
+                        className="text-red-400 hover:text-red-300 transition-colors"
                       >
-                        ✕
+                        <XCircle size={20} />
                       </button>
                     </li>
                   ))}
@@ -240,24 +300,18 @@ export default function AdminPage() {
               </div>
             </div>
 
-            <div className="flex justify-end space-x-4">
+            <div className="flex justify-end">
               <button
                 type="submit"
-                className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors flex items-center"
               >
-                Save and Download
-              </button>
-              <button
-                type="button"
-                onClick={logout}
-                className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-              >
-                Logout
+                <Save size={18} className="mr-2" />
+                Save Changes
               </button>
             </div>
           </form>
           {message && (
-            <div className="px-6 py-4 bg-green-100 border-t border-green-200 text-green-700">
+            <div className="px-6 py-4 bg-green-900 border-t border-green-800 text-green-200">
               {message}
             </div>
           )}

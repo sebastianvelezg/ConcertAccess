@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import { users } from "../../data/users";
 import { useAuth } from "../../components/AuthProvider";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import image1 from "../../images/c7.jpg";
+import { Mail, Lock } from "lucide-react";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -51,49 +54,89 @@ export default function Login() {
   };
 
   if (user) {
-    return null; // Or you could return a loading spinner here
+    return null;
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
-      <div className="px-8 py-6 mt-4 text-left bg-white shadow-lg">
-        <h3 className="text-2xl font-bold text-center">
-          Login to your account
+    <div className="relative flex items-center justify-center min-h-screen overflow-hidden">
+      <div className="absolute inset-0 z-0">
+        <Image
+          src={image1}
+          alt="Concert background"
+          layout="fill"
+          objectFit="cover"
+          className="filter brightness-50"
+        />
+      </div>
+
+      <div className="relative z-10 w-full max-w-md p-8 bg-black bg-opacity-30 backdrop-blur-md shadow-2xl rounded-2xl m-4 border border-gray-600">
+        <h3 className="text-3xl font-bold text-center text-white mb-6">
+          Welcome Back
         </h3>
-        <form onSubmit={handleSubmit}>
-          <div className="mt-4">
-            <div>
-              <label className="block" htmlFor="email">
-                Email
-              </label>
+        <p className="text-center text-gray-300 mb-8">
+          Please login to access your tickets
+        </p>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="relative">
+            <label
+              className="block text-sm font-medium text-gray-300 mb-1"
+              htmlFor="email"
+            >
+              Email Address
+            </label>
+            <div className="relative">
               <input
                 type="text"
-                placeholder="Email"
-                className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+                placeholder="Enter your email"
+                className="w-full px-4 py-2 pl-10 bg-gray-800 bg-opacity-50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-white placeholder-gray-400"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
+              <Mail
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
+              />
             </div>
-            <div className="mt-4">
-              <label className="block">Password</label>
+          </div>
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-300 mb-1">
+              Password
+            </label>
+            <div className="relative">
               <input
                 type="password"
-                placeholder="Password"
-                className="w-full px-4 py-2 mt-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-600"
+                placeholder="Enter your password"
+                className="w-full px-4 py-2 pl-10 bg-gray-800 bg-opacity-50 border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all text-white placeholder-gray-400"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-            </div>
-            <div className="flex items-baseline justify-between">
-              <button className="px-6 py-2 mt-4 text-white bg-blue-600 rounded-lg hover:bg-blue-900">
-                Login
-              </button>
+              <Lock
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={18}
+              />
             </div>
           </div>
+          <div>
+            <button
+              type="submit"
+              className="w-full px-6 py-3 text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-all font-semibold"
+            >
+              Login
+            </button>
+          </div>
         </form>
-        {error && <p className="text-red-500 mt-4">{error}</p>}
+        {error && <p className="text-red-400 text-center mt-4">{error}</p>}
+        <p className="text-center text-sm text-gray-400 mt-6">
+          Forgot your password?{" "}
+          <a
+            href="#"
+            className="text-purple-400 hover:text-purple-300 transition"
+          >
+            Reset here
+          </a>
+        </p>
       </div>
     </div>
   );

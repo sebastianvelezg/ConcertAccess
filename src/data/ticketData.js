@@ -8,7 +8,7 @@ export const ticketData = [
     area: "Main Stage",
     seat: "General Admission",
     price: 50.0,
-    status: "valid",
+    status: "fake",
   },
   {
     id: "T002",
