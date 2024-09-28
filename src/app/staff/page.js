@@ -60,14 +60,6 @@ export default function StaffPage() {
     console.warn(error);
   };
 
-  const getInitials = (name) => {
-    return name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .toUpperCase();
-  };
-
   return (
     <div className="min-h-screen bg-gray-900 py-6 px-4 sm:px-6 lg:px-8">
       <style jsx global>{`
@@ -113,7 +105,6 @@ export default function StaffPage() {
       `}</style>
       <div className="max-w-4xl mx-auto">
         <div className="bg-gray-800 shadow-2xl rounded-lg overflow-hidden border border-gray-700">
-          {/* Improved Header */}
           <div className="px-6 py-4 bg-gray-800 text-white flex justify-between items-center">
             <div className="flex items-center space-x-4">
               <div className="p-2 bg-gray-700 rounded-full">
@@ -133,14 +124,12 @@ export default function StaffPage() {
             </button>
           </div>
 
-          {/* Main Content */}
           <main className="p-6">
             <h1 className="text-2xl font-bold mb-6 text-center text-gray-200 flex items-center justify-center">
               <QrCode size={28} className="mr-2" />
               Ticket Scanner
             </h1>
 
-            {/* Scanning Area */}
             {!scanning && !scannedTicket && (
               <div className="border-4 border-dashed border-gray-600 rounded-lg p-6 mb-6 text-center">
                 <p className="text-gray-400 mb-4">Ready to scan tickets</p>
@@ -161,7 +150,6 @@ export default function StaffPage() {
               ></div>
             )}
 
-            {/* Ticket Info */}
             {scannedTicket && (
               <div className="mb-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-200 flex items-center">
@@ -247,7 +235,6 @@ export default function StaffPage() {
               </div>
             )}
 
-            {/* Scanned Tickets List */}
             {scannedTicketsList.length > 0 && (
               <div className="mt-8">
                 <h2 className="text-xl font-semibold mb-4 text-gray-200 flex items-center">
